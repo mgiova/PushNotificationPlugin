@@ -1,7 +1,9 @@
+using Newtonsoft.Json;
 using Plugin.PushNotification.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Xml;
 using Windows.Networking.PushNotifications;
 using Windows.Storage;
 
@@ -16,7 +18,7 @@ namespace Plugin.PushNotification
 
         public IPushNotificationHandler NotificationHandler { get; set; }
 
-        public string Token { get { return ApplicationData.Current.LocalSettings.Values.ContainsKey(TokenKey) ? ApplicationData.Current.LocalSettings.Values[TokenKey]?.ToString() : string.Empty;  } }
+        public string Token { get { return ApplicationData.Current.LocalSettings.Values.ContainsKey(TokenKey) ? ApplicationData.Current.LocalSettings.Values[TokenKey]?.ToString() : string.Empty; } }
 
         public event PushNotificationTokenEventHandler OnTokenRefresh;
         public event PushNotificationResponseEventHandler OnNotificationOpened;
@@ -49,7 +51,7 @@ namespace Plugin.PushNotification
             ApplicationData.Current.LocalSettings.Values[TokenKey] = channel.Uri;
             OnTokenRefresh?.Invoke(CrossPushNotification.Current, new PushNotificationTokenEventArgs(channel.Uri));
         }
-        
+
         public void UnregisterForPushNotifications()
         {
             if (channel != null)
@@ -62,9 +64,15 @@ namespace Plugin.PushNotification
         {
             Dictionary<string, object> data = new Dictionary<string, object>();
             if (args.NotificationType == PushNotificationType.Raw)
-                data.Add("RawNotification", args.RawNotification.Content);
+            {
+                foreach (var pair in JsonConvert.DeserializeObject<Dictionary<string, string>>(args.RawNotification.Content))
+                    data.Add(pair.Key, pair.Value);
+            }
             else if (args.NotificationType == PushNotificationType.Toast)
-                data.Add("ToastNotification", args.ToastNotification.Content);
+            {
+                foreach (XmlAttribute attribute in args.ToastNotification.Content.DocumentElement.Attributes)
+                    data.Add(attribute.Name, attribute.Value);
+            }
 
             OnNotificationReceived?.Invoke(CrossPushNotification.Current, new PushNotificationDataEventArgs(data));
         }
