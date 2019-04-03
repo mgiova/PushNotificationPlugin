@@ -3,7 +3,7 @@ using Plugin.PushNotification.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Xml;
+using Windows.Data.Xml.Dom;
 using Windows.Networking.PushNotifications;
 using Windows.Storage;
 
